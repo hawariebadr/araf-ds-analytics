@@ -351,16 +351,60 @@ async function figmaFetch(path) {
 async function fetchData() {
   showLoad('Fetching component data…');
   try {
-    step('Loading file structure…');
-    const fileRes = await figmaFetch(`/files/${FKEY}?depth=1`);
-    step('Loading styles…');
-    const stylesRes = await figmaFetch(`/files/${FKEY}/styles`);
-    step('Loading variables…');
-    const varsRes = await figmaFetch(`/files/${FKEY}/variables/local`).catch(() => null);
+    step('Loading all components, styles, variables…');
+    // Fetch file name + component sets + components + styles in parallel
+    const [fileRes, setsRes, compsRes, stylesRes, varsRes] = await Promise.all([
+      figmaFetch(`/files/${FKEY}?depth=0`),
+      figmaFetch(`/files/${FKEY}/component_sets`),
+      figmaFetch(`/files/${FKEY}/components`),
+      figmaFetch(`/files/${FKEY}/styles`),
+      figmaFetch(`/files/${FKEY}/variables/local`).catch(() => null),
+    ]);
     step('Processing metrics…');
-    const comps = walkComponents(fileRes.document);
+
+    // Build component list from component_sets (each set = one logical component)
+    const rawSets = setsRes.meta?.component_sets || [];
+    const rawComps = compsRes.meta?.components || [];
+
+    // Group individual components by their containing set
+    const setVariantMap = {};
+    rawComps.forEach(c => {
+      const setId = c.containing_frame?.nodeId || c.frame_id || null;
+      if (setId) {
+        if (!setVariantMap[setId]) setVariantMap[setId] = [];
+        setVariantMap[setId].push(c);
+      }
+    });
+
+    // Build unified component list: sets first, then solo components not in any set
+    const setIds = new Set(rawSets.map(s => s.node_id));
+    const soloComps = rawComps.filter(c => {
+      const setId = c.containing_frame?.nodeId || c.frame_id;
+      return !setId || !setIds.has(setId);
+    });
+
+    const comps = [
+      ...rawSets.map(s => ({
+        id: s.node_id,
+        name: s.name,
+        desc: s.description || '',
+        variants: setVariantMap[s.node_id] || [],
+        props: s.componentPropertyDefinitions || {},
+      })),
+      ...soloComps.map(c => ({
+        id: c.node_id,
+        name: c.name,
+        desc: c.description || '',
+        variants: [],
+        props: c.componentPropertyDefinitions || {},
+      })),
+    ];
+
     const styles = stylesRes.meta?.styles || [];
-    const vars = varsRes ? { total: Object.keys(varsRes.meta?.variables||{}).length, colors: Object.values(varsRes.meta?.variables||{}).filter(v=>v.resolvedType==='COLOR').length } : null;
+    const vars = varsRes ? {
+      total: Object.keys(varsRes.meta?.variables||{}).length,
+      colors: Object.values(varsRes.meta?.variables||{}).filter(v=>v.resolvedType==='COLOR').length
+    } : null;
     D = compute({ comps, styles, vars, varsBlocked: !varsRes, name: fileRes.name || 'Design System', fkey: FKEY });
     render(D);
     hideLoad();
@@ -371,19 +415,6 @@ async function fetchData() {
     setConn(false);
     if (!D) render(demoData());
   }
-}
-
-function walkComponents(node) {
-  const out = [];
-  function w(n) {
-    if (!n) return;
-    if (n.type === 'COMPONENT_SET') {
-      out.push({ id: n.id, name: n.name, desc: n.description || '', variants: (n.children||[]).filter(c=>c.type==='COMPONENT'), props: n.componentPropertyDefinitions || {} });
-    }
-    (n.children||[]).forEach(w);
-  }
-  w(node);
-  return out;
 }
 
 // ── Compute
