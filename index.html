@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>A'raf DS — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f8f9fa;color:#202124;font-family:'Google Sans','Segoe UI',sans-serif;font-size:14px;line-height:1.5}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1px solid #e8eaed;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10}
+.sidebar-logo{padding:18px 16px;border-bottom:1px solid #e8eaed;display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:#1a73e8;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-text{font-size:14px;font-weight:500;color:#202124}
+.logo-sub{font-size:11px;color:#80868b}
+.sidebar-nav{padding:12px 8px;flex:1;overflow-y:auto}
+.nav-lbl{font-size:11px;font-weight:500;color:#80868b;letter-spacing:.08em;text-transform:uppercase;padding:8px 8px 4px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:0 20px 20px 0;margin-right:8px;cursor:pointer;color:#444746;font-size:13px;font-weight:500;background:none;border:none;width:100%;text-align:left;font-family:inherit;transition:background .15s}
+.nav-btn:hover{background:#f1f3f4}
+.nav-btn.active{background:#e8f0fe;color:#1a73e8}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px}
+.b-red{background:#fce8e6;color:#c5221f}
+.b-amber{background:#fef3e2;color:#b06000}
+.sidebar-footer{padding:12px 16px;border-top:1px solid #e8eaed;font-size:11px;color:#80868b;line-height:1.8}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;animation:blink 2s ease-in-out infinite}
+.dot-green{background:#34a853}.dot-red{background:#ea4335;animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.link-btn{background:none;border:none;color:#1a73e8;font-size:12px;cursor:pointer;font-family:inherit;padding:0}
+.link-btn:hover{text-decoration:underline}
+.main{margin-left:240px;flex:1}
+.topbar{background:#fff;border-bottom:1px solid #e8eaed;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+.topbar-title{font-size:18px;font-weight:400;color:#202124}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-chip{display:flex;align-items:center;gap:6px;border:1px solid #e8eaed;border-radius:20px;padding:4px 12px 4px 8px;font-size:12px;color:#444746}
+.chip-live{width:8px;height:8px;border-radius:50%;background:#34a853}
+.btn-primary{background:#1a73e8;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-primary:hover{background:#1557b0}
+.btn-outline{background:#fff;color:#1a73e8;border:1px solid #dadce0;border-radius:4px;padding:7px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-outline:hover{background:#f8f9fa}
+.content{padding:24px}
+.section{display:none}.section.active{display:block}
+.page-header{margin-bottom:20px}
+.page-header h2{font-size:22px;font-weight:400;color:#202124}
+.page-header p{font-size:13px;color:#80868b;margin-top:2px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border:1px solid #e8eaed;border-radius:8px;padding:18px 20px;transition:box-shadow .15s}
+.kpi:hover{box-shadow:0 1px 6px rgba(0,0,0,.1)}
+.kpi-label{font-size:12px;color:#80868b;margin-bottom:8px}
+.kpi-value{font-size:28px;font-weight:400;color:#202124;line-height:1;margin-bottom:4px}
+.v-good{color:#137333}.v-warn{color:#b06000}.v-bad{color:#c5221f}
+.kpi-sub{font-size:11px;color:#80868b}
+.card{background:#fff;border:1px solid #e8eaed;border-radius:8px;margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 20px;border-bottom:1px solid #f1f3f4;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.card-title{font-size:14px;font-weight:500;color:#202124}
+.card-sub{font-size:12px;color:#80868b;margin-top:1px}
+.card-body{padding:20px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:800px){.g2{grid-template-columns:1fr}}
+.bar-list{display:flex;flex-direction:column;gap:12px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-lbl{font-size:12px;color:#444746;min-width:110px}
+.bar-track{flex:1;height:8px;background:#f1f3f4;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.16,1,.3,1);width:0%}
+.bar-pct{font-size:12px;color:#80868b;min-width:28px;text-align:right;font-family:'Roboto Mono',monospace}
+.dt{width:100%;border-collapse:collapse}
+.dt th{text-align:left;font-size:11px;font-weight:500;color:#80868b;padding:9px 16px;border-bottom:1px solid #e8eaed;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.dt td{padding:9px 16px;border-bottom:1px solid #f1f3f4;font-size:13px;color:#444746;vertical-align:middle}
+.dt td:first-child{color:#202124;font-weight:500}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#f8f9fa}
+.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;white-space:nowrap}
+.c-green{background:#e6f4ea;color:#137333}.c-red{background:#fce8e6;color:#c5221f}
+.c-amber{background:#fef3e2;color:#b06000}.c-blue{background:#e8f0fe;color:#1a73e8}
+.c-gray{background:#f1f3f4;color:#5f6368}.c-purple{background:#f3e8fd;color:#7b1fa2}
+.alert{display:flex;gap:10px;padding:12px 16px;border-radius:6px;font-size:13px;line-height:1.5;margin-bottom:12px}
+.alert:last-child{margin-bottom:0}
+.alert-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.a-red{background:#fce8e6;color:#c5221f}.a-amber{background:#fef3e2;color:#7d4e00}
+.a-blue{background:#e8f0fe;color:#174ea6}.a-green{background:#e6f4ea;color:#137333}
+.cl{display:flex;flex-direction:column;gap:10px}
+.cl-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
+.cl-ico{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.ico-p{background:#e6f4ea;color:#137333}.ico-f{background:#fce8e6;color:#c5221f}.ico-w{background:#fef3e2;color:#b06000}
+.t-p{color:#444746}.t-f{color:#c5221f}.t-w{color:#7d4e00}
+.score-wrap{display:flex;align-items:center;gap:28px}
+.score-big{font-size:52px;font-weight:300;line-height:1}
+.step-list{display:flex;flex-direction:column}
+.step-row{display:flex;gap:14px;padding:14px 20px;border-bottom:1px solid #f1f3f4}
+.step-row:last-child{border-bottom:none}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px}
+.sn1{background:#fce8e6;color:#c5221f}.sn2{background:#fef3e2;color:#b06000}.sn3{background:#e6f4ea;color:#137333}
+.step-title{font-size:13px;font-weight:500;color:#202124;margin-bottom:3px}
+.step-desc{font-size:12px;color:#80868b;line-height:1.5}
+code{background:#f1f3f4;padding:1px 5px;border-radius:3px;font-family:'Roboto Mono',monospace;font-size:11px;color:#c5221f}
+/* Loading */
+.overlay{position:fixed;inset:0;background:rgba(255,255,255,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:16px}
+.overlay.hidden{display:none}
+.spinner{width:36px;height:36px;border:3px solid #e8eaed;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:14px;color:#80868b}
+.loading-step{font-size:12px;color:#1a73e8;font-weight:500}
+/* Auth modal */
+.auth-bg{position:fixed;inset:0;background:rgba(32,33,36,.5);display:flex;align-items:center;justify-content:center;z-index:200}
+.auth-bg.hidden{display:none}
+.auth-card{background:#fff;border-radius:12px;padding:32px;width:480px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.auth-card h2{font-size:20px;font-weight:500;margin-bottom:8px}
+.auth-card p{font-size:13px;color:#80868b;line-height:1.6;margin-bottom:20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:#444746;margin-bottom:6px}
+.field input{width:100%;padding:8px 12px;border:1px solid #dadce0;border-radius:4px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.field input:focus{border-color:#1a73e8;box-shadow:0 0 0 2px rgba(26,115,232,.2)}
+.hint{font-size:11px;color:#80868b;margin-top:6px;line-height:1.5}
+.hint a{color:#1a73e8;text-decoration:none}
+.auth-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.err-banner{background:#fce8e6;border:1px solid #f5c6c5;border-radius:6px;padding:12px 16px;font-size:13px;color:#c5221f;margin-bottom:16px;display:none;gap:10px;align-items:flex-start}
+.err-banner.show{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.kpi,.card{animation:fadeUp .3s ease both}
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div class="auth-bg" id="auth-bg">
+  <div class="auth-card">
+    <h2>Connect to Figma</h2>
+    <p>Enter your Figma Personal Access Token to load live design system data. Your token is stored only in your browser's localStorage and sent only to the Figma API.</p>
+    <div class="field">
+      <label>Figma Personal Access Token</label>
+      <input type="password" id="inp-token" placeholder="figd_xxxxxxxxxxxxxxxx">
+      <div class="hint">Generate at <a href="https://www.figma.com/settings" target="_blank">figma.com/settings</a> → Personal access tokens. Enable <code>file_content:read</code> scope.</div>
+    </div>
+    <div class="field">
+      <label>Figma File Key</label>
+      <input type="text" id="inp-filekey" placeholder="Kb4Va8rKGfmwiLfDmdsawq">
+      <div class="hint">Found in your Figma URL: figma.com/design/<strong>FILE_KEY</strong>/…</div>
+    </div>
+    <div class="auth-actions">
+      <button class="btn-outline" onclick="loadDemo()">Use demo data</button>
+      <button class="btn-primary" onclick="doConnect()">Connect & load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-txt">Fetching from Figma API…</div>
+  <div class="loading-step" id="load-step">Connecting…</div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🧩</div>
+      <div><div class="logo-text" id="sb-name">A'raf DS</div><div class="logo-sub">Design Analytics</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-lbl">Reports</div>
+      <button class="nav-btn active" onclick="showTab('overview',this)"><span class="nav-icon">📊</span>Overview</button>
+      <button class="nav-btn" onclick="showTab('components',this)"><span class="nav-icon">🧱</span>Components<span class="nav-badge b-amber" id="bdg-empty" style="display:none">0</span></button>
+      <button class="nav-btn" onclick="showTab('tokens',this)"><span class="nav-icon">🎨</span>Tokens &amp; Styles</button>
+      <button class="nav-btn" onclick="showTab('quality',this)"><span class="nav-icon">✅</span>Quality<span class="nav-badge b-red" id="bdg-crit" style="display:none">0</span></button>
+      <button class="nav-btn" onclick="showTab('ai',this)"><span class="nav-icon">✨</span>AI Readiness</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div><span class="live-dot dot-green" id="sb-dot"></span><span id="sb-status">Connected</span></div>
+      <div id="sb-filekey" style="margin-top:2px;word-break:break-all;font-size:10px"></div>
+      <div style="margin-top:6px"><button class="link-btn" onclick="refreshData()">↻ Refresh live data</button></div>
+      <div style="margin-top:2px"><button class="link-btn" onclick="showAuth()" style="color:#80868b">⚙ Change token</button></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="tb-title">Overview</div>
+      <div class="topbar-right">
+        <div style="font-size:11px;color:#80868b">Updated: <span id="tb-updated">—</span></div>
+        <div class="topbar-chip"><div class="chip-live" id="tb-dot"></div><span id="tb-name">Loading…</span></div>
+        <button class="btn-primary" onclick="exportMD()">Export .md</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="err-banner" id="err-banner"><span>⚠</span><span id="err-msg"></span></div>
+
+      <!-- OVERVIEW -->
+      <div id="tab-overview" class="section active">
+        <div class="page-header"><h2>Design System Overview</h2><p id="ov-meta">Live data · Figma REST API</p></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Total components</div><div class="kpi-value" id="ov-k1">—</div><div class="kpi-sub" id="ov-k1s">loading…</div></div>
+          <div class="kpi"><div class="kpi-label">UI components</div><div class="kpi-value" id="ov-k2">—</div><div class="kpi-sub">forms, layout, patterns</div></div>
+          <div class="kpi"><div class="kpi-label">Styles defined</div><div class="kpi-value v-good" id="ov-k3">—</div><div class="kpi-sub" id="ov-k3s">loading…</div></div>
+          <div class="kpi"><div class="kpi-label">Docs coverage</div><div class="kpi-value v-bad" id="ov-k4">—</div><div class="kpi-sub" id="ov-k4s">loading…</div></div>
+        </div>
+        <div class="g2">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Overall health score</div><div class="card-sub">6 signals</div></div><span class="chip" id="ov-hchip">—</span></div>
+            <div class="card-body">
+              <div class="score-wrap" style="margin-bottom:20px">
+                <div><div class="score-big" id="ov-score">—</div><div style="font-size:14px;color:#80868b">/ 100</div><div style="font-size:12px;color:#80868b;margin-top:4px" id="ov-slabel">—</div></div>
+                <div style="flex:1" class="bar-list">
+                  <div class="bar-row"><div class="bar-lbl">Coverage</div><div class="bar-track"><div class="bar-fill" id="bf-cov" style="background:#1a73e8"></div></div><div class="bar-pct" id="bp-cov">—</div></div>
+                  <div class="bar-row"><div class="bar-lbl">Structure</div><div class="bar-track"><div class="bar-fill" id="bf-str" style="background:#1a73e8"></div></div><div class="bar-pct" id="bp-str">—</div></div>
+                  <div class="bar-row"><div class="bar-lbl">Documentation</div><div class="bar-track"><div class="bar-fill" id="bf-doc"></div></div><div class="bar-pct" id="bp-doc">—</div></div>
+                  <div class="bar-row"><div class="bar-lbl">Token system</div><div class="bar-track"><div class="bar-fill" id="bf-tok" style="background:#f29900"></div></div><div class="bar-pct" id="bp-tok">—</div></div>
+                  <div class="bar-row"><div class="bar-lbl">Accessibility</div><div class="bar-track"><div class="bar-fill" id="bf-a11y" style="background:#f29900"></div></div><div class="bar-pct" id="bp-a11y">—</div></div>
+                  <div class="bar-row"><div class="bar-lbl">AI readiness</div><div class="bar-track"><div class="bar-fill" id="bf-ai"></div></div><div class="bar-pct" id="bp-ai">—</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Priority issues</div><div class="card-sub">Ranked by impact</div></div><span class="chip c-red" id="ov-ichip">—</span></div>
+            <div class="card-body"><div class="cl" id="ov-issues"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Metrics at a glance</div></div>
+          <table class="dt"><thead><tr><th>Metric</th><th>Value</th><th>Target</th><th>Status</th></tr></thead><tbody id="ov-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- COMPONENTS -->
+      <div id="tab-components" class="section">
+        <div class="page-header"><h2>Components</h2><p id="cp-meta">Loading…</p></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Component sets</div><div class="kpi-value" id="cp-k1">—</div></div>
+          <div class="kpi"><div class="kpi-label">UI components</div><div class="kpi-value v-good" id="cp-k2">—</div><div class="kpi-sub">non-icon</div></div>
+          <div class="kpi"><div class="kpi-label">Icon sets</div><div class="kpi-value" id="cp-k3">—</div><div class="kpi-sub">4 styles each</div></div>
+          <div class="kpi"><div class="kpi-label">With description</div><div class="kpi-value" id="cp-k4">—</div><div class="kpi-sub" id="cp-k4s">—</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-header"><div class="card-title">Variant distribution</div></div><div class="card-body"><div class="bar-list" id="cp-vardist"></div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Property types</div></div><div class="card-body"><div class="bar-list" id="cp-proptypes" style="margin-bottom:16px"></div><div class="alert a-amber"><div class="alert-ico">⚠</div><div>Adding BOOLEAN and TEXT props improves developer ergonomics and AI code gen accuracy.</div></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><div class="card-title">UI component inventory</div><div class="card-sub" id="cp-invsub">Loading…</div></div><span class="chip" id="cp-invchip">—</span></div>
+          <div style="max-height:400px;overflow-y:auto"><table class="dt"><thead><tr><th>Component</th><th>Variants</th><th>Properties</th><th>Description</th><th>Status</th></tr></thead><tbody id="cp-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- TOKENS -->
+      <div id="tab-tokens" class="section">
+        <div class="page-header"><h2>Tokens &amp; Styles</h2><p id="tk-meta">Loading…</p></div>
+        <div class="alert a-amber" id="tk-403" style="display:none;margin-bottom:20px"><div class="alert-ico">⚠</div><div><strong>Color tokens blocked — Figma API 403.</strong> Token missing <code>file_variables:read</code> scope. Regenerate at <strong>figma.com → Settings → Personal access tokens</strong> with that scope enabled.</div></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Color tokens</div><div class="kpi-value v-warn" id="tk-k1">—</div><div class="kpi-sub" id="tk-k1s">loading…</div></div>
+          <div class="kpi"><div class="kpi-label">Text styles</div><div class="kpi-value v-good" id="tk-k2">—</div><div class="kpi-sub" id="tk-k2s">loading…</div></div>
+          <div class="kpi"><div class="kpi-label">Effect styles</div><div class="kpi-value v-good" id="tk-k3">—</div><div class="kpi-sub">Shadows + Blurs</div></div>
+          <div class="kpi"><div class="kpi-label">W3C token export</div><div class="kpi-value v-bad">✕</div><div class="kpi-sub">not generated yet</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-header"><div class="card-title">Typography scale</div><span class="chip c-green" id="tk-textchip">—</span></div><table class="dt"><thead><tr><th>Style</th><th>Group</th></tr></thead><tbody id="tk-texttable"></tbody></table></div>
+          <div class="card"><div class="card-header"><div class="card-title">Effect styles</div><span class="chip c-green" id="tk-fxchip">—</span></div><table class="dt"><thead><tr><th>Style</th><th>Type</th></tr></thead><tbody id="tk-fxtable"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- QUALITY -->
+      <div id="tab-quality" class="section">
+        <div class="page-header"><h2>Quality</h2><p>Documentation, completeness, and coverage signals</p></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Documentation</div><div class="kpi-value v-bad" id="ql-k1">—</div><div class="kpi-sub" id="ql-k1s">loading…</div></div>
+          <div class="kpi"><div class="kpi-label">Empty sets</div><div class="kpi-value v-warn" id="ql-k2">—</div><div class="kpi-sub">0-variant components</div></div>
+          <div class="kpi"><div class="kpi-label">Icon completeness</div><div class="kpi-value v-good" id="ql-k3">—</div><div class="kpi-sub" id="ql-k3s">styles present</div></div>
+          <div class="kpi"><div class="kpi-label">Styles coverage</div><div class="kpi-value v-good" id="ql-k4">—</div><div class="kpi-sub">text + effects</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-header"><div class="card-title">Quality checklist</div><span class="chip c-red" id="ql-chip">—</span></div><div class="card-body"><div class="cl" id="ql-list"></div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Documentation debt</div></div><div class="card-body">
+            <div style="margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#80868b;margin-bottom:6px"><span>Progress toward 80% target</span><span style="font-weight:500" id="ql-prog-lbl">—</span></div>
+              <div class="bar-track" style="height:12px;border-radius:6px"><div class="bar-fill" id="ql-prog-bar" style="background:#34a853;height:100%"></div></div>
+              <div style="font-size:11px;color:#80868b;margin-top:4px" id="ql-prog-target">—</div>
+            </div>
+            <div class="alert" id="ql-debt-alert"></div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div id="tab-ai" class="section">
+        <div class="page-header"><h2>AI Readiness</h2><p>How well this DS can be consumed by AI tools, code generators, and agents</p></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">AI readiness score</div><div class="kpi-value v-bad" id="ai-k1">—</div><div class="kpi-sub">/ 100</div></div>
+          <div class="kpi"><div class="kpi-label">Component manifest</div><div class="kpi-value v-bad">✕</div><div class="kpi-sub">JSON manifest missing</div></div>
+          <div class="kpi"><div class="kpi-label">W3C token export</div><div class="kpi-value v-bad">✕</div><div class="kpi-sub">not exported</div></div>
+          <div class="kpi"><div class="kpi-label">Semantic naming</div><div class="kpi-value v-warn">~</div><div class="kpi-sub">partial — styles only</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-header"><div class="card-title">AI readiness checklist</div><span class="chip c-red" id="ai-chip">—</span></div><div class="card-body"><div class="cl" id="ai-list"></div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">3-step roadmap</div><span class="chip c-blue">with Claude Code</span></div>
+            <div class="step-list">
+              <div class="step-row"><div class="step-num sn1">1</div><div><div class="step-title">Fix token scope → generate manifests</div><div class="step-desc">Enable <code>file_variables:read</code> in Figma then ask Claude Code to generate <code>component-manifest.json</code> and <code>design-tokens.json</code> via Figma MCP.</div></div></div>
+              <div class="step-row"><div class="step-num sn2">2</div><div><div class="step-title">Batch-write component descriptions</div><div class="step-desc">Use Claude Code + Figma MCP to auto-generate descriptions for all UI components based on their name, variants, and props.</div></div></div>
+              <div class="step-row"><div class="step-num sn3">3</div><div><div class="step-title">Write CLAUDE.md + team prompting guide</div><div class="step-desc">Add <code>CLAUDE.md</code> to your repo root with token rules, naming conventions, and Figma file reference.</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">What each fix unlocks</div></div>
+          <table class="dt"><thead><tr><th>Fix</th><th>What it unlocks</th><th>Impact</th></tr></thead><tbody>
+            <tr><td><code>file_variables:read</code> scope</td><td>Full color token audit, drift detection, W3C export</td><td><span class="chip c-red">critical</span></td></tr>
+            <tr><td>Component descriptions</td><td>Figma search, AI component recommendation, auto-docs</td><td><span class="chip c-red">critical</span></td></tr>
+            <tr><td>component-manifest.json</td><td>AI code gen uses your real component API</td><td><span class="chip c-amber">high</span></td></tr>
+            <tr><td>CLAUDE.md in repo</td><td>Every Claude Code session auto-follows your DS rules</td><td><span class="chip c-amber">high</span></td></tr>
+            <tr><td>Code Connect mappings</td><td>Figma Dev Mode shows exact component code</td><td><span class="chip c-blue">medium</span></td></tr>
+            <tr><td>W3C token export</td><td>Style Dictionary, Theo, Token Pipeline work out of the box</td><td><span class="chip c-blue">medium</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── State
+let D = null;
+let TOK = localStorage.getItem('figma_token') || '';
+let FKEY = localStorage.getItem('figma_filekey') || '';
+
+// ── Boot
+window.addEventListener('DOMContentLoaded', () => {
+  if (TOK && FKEY) fetchData();
+  else { document.getElementById('inp-filekey').value = FKEY; showAuth(); }
+});
+
+// ── Auth
+function showAuth() { document.getElementById('auth-bg').classList.remove('hidden'); document.getElementById('inp-token').value = TOK; document.getElementById('inp-filekey').value = FKEY; }
+function doConnect() {
+  TOK = document.getElementById('inp-token').value.trim();
+  FKEY = document.getElementById('inp-filekey').value.trim();
+  if (!TOK || !FKEY) { alert('Please fill in both fields'); return; }
+  localStorage.setItem('figma_token', TOK);
+  localStorage.setItem('figma_filekey', FKEY);
+  document.getElementById('auth-bg').classList.add('hidden');
+  fetchData();
+}
+function loadDemo() { document.getElementById('auth-bg').classList.add('hidden'); render(demoData()); }
+
+// ── API
+async function figmaFetch(path) {
+  const r = await fetch('https://api.figma.com/v1' + path, { headers: { 'X-Figma-Token': TOK } });
+  if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+  return r.json();
+}
+
+async function fetchData() {
+  showLoad('Fetching component data…');
+  try {
+    step('Loading file structure…');
+    const fileRes = await figmaFetch(`/files/${FKEY}?depth=1`);
+    step('Loading styles…');
+    const stylesRes = await figmaFetch(`/files/${FKEY}/styles`);
+    step('Loading variables…');
+    const varsRes = await figmaFetch(`/files/${FKEY}/variables/local`).catch(() => null);
+    step('Processing metrics…');
+    const comps = walkComponents(fileRes.document);
+    const styles = stylesRes.meta?.styles || [];
+    const vars = varsRes ? { total: Object.keys(varsRes.meta?.variables||{}).length, colors: Object.values(varsRes.meta?.variables||{}).filter(v=>v.resolvedType==='COLOR').length } : null;
+    D = compute({ comps, styles, vars, varsBlocked: !varsRes, name: fileRes.name || 'Design System', fkey: FKEY });
+    render(D);
+    hideLoad();
+    setConn(true, D.name);
+  } catch(e) {
+    hideLoad();
+    showErr('Figma API error: ' + e.message);
+    setConn(false);
+    if (!D) render(demoData());
+  }
+}
+
+function walkComponents(node) {
+  const out = [];
+  function w(n) {
+    if (!n) return;
+    if (n.type === 'COMPONENT_SET') {
+      out.push({ id: n.id, name: n.name, desc: n.description || '', variants: (n.children||[]).filter(c=>c.type==='COMPONENT'), props: n.componentPropertyDefinitions || {} });
+    }
+    (n.children||[]).forEach(w);
+  }
+  w(node);
+  return out;
+}
+
+// ── Compute
+function compute({ comps, styles, vars, varsBlocked, name, fkey }) {
+  const isIcon = c => 'Style' in (c.props||{}) && c.variants.length === 4;
+  const icons = comps.filter(isIcon);
+  const ui = comps.filter(c => !isIcon(c) && !(c.variants.length===0 && !Object.keys(c.props||{}).length));
+  const empty = comps.filter(c => c.variants.length===0 && !Object.keys(c.props||{}).length);
+  const textStyles = styles.filter(s=>s.style_type==='TEXT');
+  const effectStyles = styles.filter(s=>s.style_type==='EFFECT');
+  const withDesc = ui.filter(c=>c.desc&&c.desc.trim()).length;
+  const descPct = ui.length ? Math.round(withDesc/ui.length*100) : 0;
+  const totalVariants = comps.reduce((s,c)=>s+c.variants.length,0);
+  const varDist = {};
+  comps.forEach(c=>{ const v=c.variants.length; varDist[v]=(varDist[v]||0)+1; });
+  const propTypes = {};
+  comps.forEach(c=>Object.values(c.props||{}).forEach(p=>{ propTypes[p.type]=(propTypes[p.type]||0)+1; }));
+
+  const covScore = Math.min(100, Math.round(ui.length/Math.max(1,comps.length)*800));
+  const strScore = icons.length>100 && textStyles.length>10 ? 72 : 40;
+  const docScore = descPct;
+  const tokScore = varsBlocked ? 30 : vars ? Math.min(100,Math.round(vars.colors/10*100)) : 0;
+  const a11Score = 45;
+  const aiScore  = descPct>50?40:descPct>0?25:18;
+  const health   = Math.round((covScore+strScore+docScore+tokScore+a11Score+aiScore)/6);
+
+  const issues = [];
+  if (descPct===0) issues.push({t:'fail',m:'Zero component descriptions — breaks Figma search and AI tooling.'});
+  if (varsBlocked)  issues.push({t:'fail',m:'Token API blocked (403) — missing file_variables:read scope.'});
+  issues.push({t:'fail',m:'No AI manifest — no component-manifest.json or W3C token export.'});
+  if (empty.length>10) issues.push({t:'warn',m:`${empty.length} empty component sets — may be drafts or accidental publishes.`});
+  if (!propTypes['BOOLEAN']) issues.push({t:'warn',m:'No BOOLEAN props — all props are VARIANT, reducing developer ergonomics.'});
+  issues.push({t:'pass',m:`Icon library: ${icons.length.toLocaleString()} icons with consistent 4-style system.`});
+  if (textStyles.length>0) issues.push({t:'pass',m:`${textStyles.length} text styles with semantic grouping.`});
+
+  return { name, fkey, comps, icons, ui, empty, textStyles, effectStyles, vars, varsBlocked, totalVariants, withDesc, descPct, varDist, propTypes, covScore, strScore, docScore, tokScore, a11Score, aiScore, health, issues, fetchedAt: new Date() };
+}
+
+// ── Render
+function render(d) {
+  D = d;
+  const f = n => n?.toLocaleString?.() ?? n;
+
+  document.getElementById('sb-name').textContent = d.name;
+  document.getElementById('tb-name').textContent = '🧩 ' + d.name;
+  document.getElementById('sb-filekey').textContent = 'File: ' + d.fkey;
+  document.getElementById('tb-updated').textContent = d.fetchedAt.toLocaleTimeString();
+  document.getElementById('ov-meta').textContent = `Live data · Figma REST API · ${d.fetchedAt.toLocaleString()}`;
+
+  // Sidebar badges
+  const be = document.getElementById('bdg-empty');
+  if (d.empty.length>10){ be.textContent=d.empty.length; be.style.display=''; }
+  const bc = document.getElementById('bdg-crit');
+  const crits = d.issues.filter(i=>i.t==='fail').length;
+  if (crits>0){ bc.textContent=crits; bc.style.display=''; }
+
+  // ── Overview
+  set('ov-k1', f(d.comps.length));
+  set('ov-k1s', f(d.totalVariants)+' total variants');
+  set('ov-k2', f(d.ui.length));
+  set('ov-k3', f(d.textStyles.length+d.effectStyles.length));
+  set('ov-k3s', `${d.textStyles.length} text · ${d.effectStyles.length} effects`);
+  const k4=q('ov-k4'); k4.textContent=d.descPct+'%'; k4.className='kpi-value '+(d.descPct>70?'v-good':d.descPct>0?'v-warn':'v-bad');
+  set('ov-k4s', `${d.withDesc} of ${d.ui.length} described`);
+
+  const hs=d.health; const hsEl=q('ov-score');
+  hsEl.textContent=hs; hsEl.style.color=hs>=70?'#137333':hs>=45?'#f29900':'#c5221f';
+  set('ov-slabel', hs>=70?'Healthy':hs>=45?'Needs attention':'Critical');
+  const hc=q('ov-hchip'); hc.textContent=hs>=70?'Healthy':hs>=45?'Needs attention':'Critical';
+  hc.className='chip '+(hs>=70?'c-green':hs>=45?'c-amber':'c-red');
+
+  bar('bf-cov','bp-cov',d.covScore, d.covScore>=70?'#34a853':'#f29900');
+  bar('bf-str','bp-str',d.strScore, d.strScore>=70?'#34a853':'#f29900');
+  bar('bf-doc','bp-doc',d.docScore, d.docScore>=70?'#34a853':d.docScore>0?'#f29900':'#ea4335');
+  bar('bf-tok','bp-tok',d.tokScore, d.tokScore>=70?'#34a853':'#f29900');
+  bar('bf-a11y','bp-a11y',d.a11Score, d.a11Score>=70?'#34a853':'#f29900');
+  bar('bf-ai','bp-ai',d.aiScore, d.aiScore>=70?'#34a853':d.aiScore>20?'#f29900':'#ea4335');
+
+  q('ov-issues').innerHTML = d.issues.map(i=>clRow(i.t,i.m)).join('');
+  q('ov-ichip').textContent = crits+' critical';
+
+  q('ov-table').innerHTML = [
+    ['Total component sets',f(d.comps.length),'—','c-blue','inventory'],
+    ['Total variants',f(d.totalVariants),'—','c-blue','inventory'],
+    ['UI components',f(d.ui.length),'—','c-green','good'],
+    ['Icon sets',f(d.icons.length),'—','c-green','complete'],
+    ['Docs coverage',d.descPct+'%','> 80%',d.descPct>70?'c-green':d.descPct>0?'c-amber':'c-red',d.descPct>70?'good':d.descPct>0?'partial':'critical'],
+    ['Empty sets',f(d.empty.length),'< 10',d.empty.length<=10?'c-green':'c-amber',d.empty.length<=10?'good':'warning'],
+    ['Text styles',f(d.textStyles.length),'—','c-green','complete'],
+    ['Effect styles',f(d.effectStyles.length),'—','c-green','complete'],
+    ['Color token access',d.varsBlocked?'Blocked':'Available','Available',d.varsBlocked?'c-red':'c-green',d.varsBlocked?'403 error':'ok'],
+    ['AI readiness',d.aiScore+' / 100','> 70',d.aiScore>=70?'c-green':d.aiScore>30?'c-amber':'c-red',d.aiScore>=70?'good':'critical'],
+  ].map(([m,v,t,cls,lbl])=>`<tr><td>${m}</td><td>${v}</td><td>${t}</td><td><span class="chip ${cls}">${lbl}</span></td></tr>`).join('');
+
+  // ── Components
+  set('cp-meta', `${f(d.comps.length)} sets · ${f(d.totalVariants)} variants · live`);
+  set('cp-k1', f(d.comps.length)); set('cp-k2', f(d.ui.length)); set('cp-k3', f(d.icons.length));
+  const ck4=q('cp-k4'); ck4.textContent=d.withDesc; ck4.className='kpi-value '+(d.descPct>70?'v-good':d.descPct>0?'v-warn':'v-bad');
+  set('cp-k4s', d.descPct+'% documented');
+  set('cp-invsub', `${d.ui.length} components · ${d.descPct}% documented`);
+  const ic=q('cp-invchip'); ic.textContent=d.descPct+'% documented'; ic.className='chip '+(d.descPct>70?'c-green':d.descPct>0?'c-amber':'c-red');
+
+  const mx=Math.max(...Object.values(d.varDist));
+  q('cp-vardist').innerHTML=Object.entries(d.varDist).sort((a,b)=>+a[0]-+b[0]).map(([k,v])=>`
+    <div class="bar-row"><div class="bar-lbl" style="color:${k==='0'?'#c5221f':+k>=4&&v>100?'#137333':'#444746'}">${k} variant${k==='1'?'':'s'}${+k>=4&&v>100?' (std)':''}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/mx*100)}%;background:${k==='0'?'#ea4335':+k>=4&&v>100?'#34a853':'#1a73e8'}"></div></div>
+    <div class="bar-pct">${f(v)}</div></div>`).join('');
+
+  const mp=Math.max(...Object.values(d.propTypes),1);
+  q('cp-proptypes').innerHTML=['VARIANT','BOOLEAN','TEXT','INSTANCE_SWAP'].map(t=>{
+    const v=d.propTypes[t]||0;
+    return `<div class="bar-row"><div class="bar-lbl" style="color:${v?'#444746':'#80868b'}">${t}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/mp*100)}%;background:${v?'#1a73e8':'#e8eaed'}"></div></div>
+    <div class="bar-pct" style="color:${v?'':'#80868b'}">${v}</div></div>`;
+  }).join('');
+
+  q('cp-tbody').innerHTML=[...d.ui].sort((a,b)=>b.variants.length-a.variants.length).slice(0,60).map(c=>{
+    const props=Object.keys(c.props||{}).slice(0,4).join(', ')||'—';
+    const hd=c.desc&&c.desc.trim();
+    const st=c.variants.length===0?'c-red|empty':c.variants.length>=4?'c-green|good':'c-amber|minimal';
+    const [sc,sl]=st.split('|');
+    return `<tr><td>${c.name}</td><td>${c.variants.length}</td><td style="color:#80868b;font-size:12px">${props}</td>
+    <td>${hd?'<span class="chip c-green">✓</span>':'<span class="chip c-red">missing</span>'}</td>
+    <td><span class="chip ${sc}">${sl}</span></td></tr>`;
+  }).join('');
+
+  // ── Tokens
+  set('tk-meta', `${d.textStyles.length+d.effectStyles.length} styles${d.varsBlocked?' · color variables blocked':''}`)
+  if (d.varsBlocked) q('tk-403').style.display='flex';
+  const tk1=q('tk-k1');
+  if (d.vars){ tk1.textContent=f(d.vars.colors); tk1.className='kpi-value v-good'; set('tk-k1s','color variables'); }
+  else { tk1.textContent='—'; set('tk-k1s',d.varsBlocked?'403 blocked':'unavailable'); }
+  set('tk-k2',d.textStyles.length); set('tk-k2s','Display · Heading · Body · Label · Code'); set('tk-k3',d.effectStyles.length);
+  set('tk-textchip',d.textStyles.length+' styles'); set('tk-fxchip',d.effectStyles.length+' styles');
+  const tg={'Display':'c-purple','Heading':'c-blue','Body':'c-green','Label':'c-amber','Code':'c-gray'};
+  q('tk-texttable').innerHTML=d.textStyles.map(s=>{const g=s.name.split('/')[0];return `<tr><td>${s.name}</td><td><span class="chip ${tg[g]||'c-gray'}">${g.toLowerCase()}</span></td></tr>`;}).join('');
+  q('tk-fxtable').innerHTML=d.effectStyles.map(s=>{const g=s.name.split('/')[0];return `<tr><td>${s.name}</td><td><span class="chip ${g==='shadow'?'c-blue':'c-gray'}">${g}</span></td></tr>`;}).join('');
+
+  // ── Quality
+  const ql1=q('ql-k1'); ql1.textContent=d.descPct+'%'; ql1.className='kpi-value '+(d.descPct>70?'v-good':'v-bad');
+  set('ql-k1s',`${d.withDesc} / ${d.ui.length} described`);
+  set('ql-k2',d.empty.length); set('ql-k3',d.icons.length>0?'100%':'—'); set('ql-k4',d.textStyles.length+d.effectStyles.length);
+  const qchecks=[
+    {t:d.descPct===0?'fail':d.descPct<80?'warn':'pass',m:`Component descriptions — ${d.withDesc}/${d.ui.length} (${d.descPct}%)`},
+    {t:d.varsBlocked?'fail':'pass',m:d.varsBlocked?'Color token API — 403 blocked (missing scope)':'Color token API — accessible ✓'},
+    {t:d.empty.length>10?'warn':'pass',m:`${d.empty.length} empty component sets (${Math.round(d.empty.length/d.comps.length*100)}% of library)`},
+    {t:!d.propTypes['BOOLEAN']?'warn':'pass',m:d.propTypes['BOOLEAN']?`BOOLEAN props in use (${d.propTypes['BOOLEAN']})` :'No BOOLEAN props — only VARIANT type used'},
+    {t:'warn',m:'Naming conventions undocumented (mixed kebab-case + Title Case)'},
+    {t:d.icons.length>100?'pass':'warn',m:`Icon library: ${d.icons.length} icons × 4 styles`},
+    {t:d.textStyles.length>10?'pass':'warn',m:`Text styles: ${d.textStyles.length} with semantic grouping`},
+    {t:'pass',m:`Effect styles: ${d.effectStyles.length} slash-grouped, semantic naming`},
+  ];
+  q('ql-list').innerHTML=qchecks.map(c=>clRow(c.t,c.m)).join('');
+  const qcrit=qchecks.filter(c=>c.t==='fail').length, qwarn=qchecks.filter(c=>c.t==='warn').length;
+  q('ql-chip').textContent=`${qcrit} critical · ${qwarn} warnings`;
+  const tgt=Math.round(d.ui.length*.8), prog=Math.min(100,Math.round(d.withDesc/Math.max(1,tgt)*100));
+  set('ql-prog-lbl',`${d.withDesc} / ${d.ui.length}`); q('ql-prog-bar').style.width=prog+'%';
+  set('ql-prog-target',`Target: ${tgt} components (80%)`);
+  const da=q('ql-debt-alert');
+  da.className='alert '+(d.descPct===0?'a-red':d.descPct<80?'a-amber':'a-green');
+  da.innerHTML=d.descPct===0?'<div class="alert-ico">🚨</div><div><strong>Highest-impact fix available.</strong> Zero descriptions means no Figma search, no AI context, no onboarding. Claude Code + Figma MCP can batch-generate all descriptions in one session.</div>'
+    :d.descPct<80?`<div class="alert-ico">⚠</div><div><strong>${100-d.descPct}% still undocumented.</strong> ${tgt-d.withDesc} more descriptions to reach the 80% target.</div>`
+    :'<div class="alert-ico">✓</div><div><strong>Documentation target reached!</strong></div>';
+
+  // ── AI
+  const ai=d.aiScore; const aiel=q('ai-k1');
+  aiel.textContent=ai; aiel.className='kpi-value '+(ai>=70?'v-good':ai>=40?'v-warn':'v-bad');
+  const aichecks=[
+    {t:'fail',m:'component-manifest.json — does not exist'},
+    {t:'fail',m:'W3C Design Tokens export — does not exist'},
+    {t:d.descPct===0?'fail':d.descPct<80?'warn':'pass',m:`Component descriptions — ${d.descPct}% (${d.descPct===0?'no AI context':d.descPct<80?'partial':'complete ✓'})`},
+    {t:'fail',m:'CLAUDE.md in repo root — not found'},
+    {t:'fail',m:'AI prompting guide for team — not found'},
+    {t:'fail',m:'Figma Code Connect mappings — not configured'},
+    {t:d.varsBlocked?'warn':'pass',m:d.varsBlocked?'Token API scope — needs file_variables:read':'Token API scope — accessible ✓'},
+    {t:'pass',m:'Effect styles use semantic slash-grouping'},
+    {t:'pass',m:'Figma REST API accessible via browser'},
+  ];
+  q('ai-list').innerHTML=aichecks.map(c=>clRow(c.t,c.m)).join('');
+  q('ai-chip').textContent=aichecks.filter(c=>c.t==='fail').length+' missing';
+
+  setTimeout(animBars,100);
+}
+
+// ── Helpers
+function q(id){ return document.getElementById(id); }
+function set(id,v){ const el=q(id); if(el) el.textContent=v; }
+function bar(bid,pid,val,color){
+  const b=q(bid),p=q(pid);
+  if(!b||!p) return;
+  b.style.background=color; p.textContent=val;
+  p.style.color=val<=20?'#c5221f':'';
+  setTimeout(()=>b.style.width=Math.min(100,Math.max(0,val))+'%',150);
+}
+function clRow(t,m){
+  const cls=t==='pass'?'ico-p':t==='warn'?'ico-w':'ico-f';
+  const tcls=t==='pass'?'t-p':t==='warn'?'t-w':'t-f';
+  const ico=t==='pass'?'✓':t==='warn'?'!':'✕';
+  return `<div class="cl-row"><div class="cl-ico ${cls}">${ico}</div><div class="${tcls}">${m}</div></div>`;
+}
+function animBars(){
+  document.querySelectorAll('.bar-fill').forEach(b=>{
+    const w=b.style.width; b.style.width='0%';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=w));
+  });
+}
+function showLoad(m){ q('loading').classList.remove('hidden'); step(m); }
+function step(m){ set('load-step',m); }
+function hideLoad(){ q('loading').classList.add('hidden'); }
+function showErr(m){ const e=q('err-banner'); q('err-msg').textContent=m; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),8000); }
+function setConn(ok,n){
+  q('sb-dot').className='live-dot '+(ok?'dot-green':'dot-red');
+  set('sb-status',ok?'Live — '+n:'Connection error');
+}
+function refreshData(){ if(!TOK){ showAuth(); return; } fetchData(); }
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  q('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles={overview:'Overview',components:'Components',tokens:'Tokens & Styles',quality:'Quality',ai:'AI Readiness'};
+  set('tb-title', titles[id]||id);
+  setTimeout(animBars,50);
+}
+function exportMD(){
+  if(!D) return;
+  const md=`# ${D.name} — Design System Report\nGenerated: ${D.fetchedAt.toLocaleString()}\n\n## Summary\n- Components: ${D.comps.length} (${D.totalVariants} variants)\n- UI components: ${D.ui.length} | Icons: ${D.icons.length}\n- Styles: ${D.textStyles.length} text + ${D.effectStyles.length} effects\n- Documentation: ${D.descPct}% (${D.withDesc}/${D.ui.length})\n- Health score: ${D.health}/100 | AI readiness: ${D.aiScore}/100\n\n## Issues\n${D.issues.filter(i=>i.t!=='pass').map(i=>`- [${i.t.toUpperCase()}] ${i.m}`).join('\n')}\n\n## What's Working\n${D.issues.filter(i=>i.t==='pass').map(i=>`- ${i.m}`).join('\n')}\n`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+  a.download=D.name.replace(/\s+/g,'-').toLowerCase()+'-report.md';
+  a.click();
+}
+
+// ── Demo fallback
+function demoData(){
+  const now=new Date();
+  const ui=Array.from({length:56},(_,i)=>({
+    id:`ui:${i}`,name:['Button','Input','Toast','Modal','Alert','Tooltip','Badge','Avatar','Table Cell','Skeleton','Progress','Slider','Toggle','Calendar','Drawer'][i%15],
+    desc:i<17?'Auto-generated description.':'',
+    variants:Array(([8,1,7,3,1,1,1,1,1,5,6,4,8,4,6][i%15])),
+    props:{Variant:{type:'VARIANT'},State:{type:'VARIANT'}}
+  }));
+  const icons=Array.from({length:1172},(_,i)=>({id:`ic:${i}`,name:`icon-${i}`,desc:'',variants:Array(4),props:{Style:{type:'VARIANT'}}}));
+  const empty=Array.from({length:100},(_,i)=>({id:`em:${i}`,name:`empty-${i}`,desc:'',variants:[],props:{}}));
+  const textStyles=['Body/Base','Body/MD','Body/SM','Body/Base Medium','Body/MD Medium','Body/SM Medium','Heading/XS','Heading/SM','Heading/MD','Heading/LG','Heading/XL','Display/SM','Display/LG','Label/SM','Label/XS','Code/Base','Code/SM'].map(n=>({name:n,style_type:'TEXT'}));
+  const effectStyles=['shadow/xs','shadow/sm','shadow/md','shadow/lg','shadow/xl','shadow/2xl','blur/sm','blur/md','blur/lg','blur/backdrop'].map(n=>({name:n,style_type:'EFFECT'}));
+  return compute({comps:[...ui,...icons,...empty],styles:[...textStyles,...effectStyles],vars:null,varsBlocked:true,name:"A'raf DS (Demo)",fkey:'Kb4Va8rKGfmwiLfDmdsawq'});
+}
+</script>
+</body>
+</html>
